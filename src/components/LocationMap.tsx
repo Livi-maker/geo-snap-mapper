@@ -4,6 +4,18 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card } from '@/components/ui/card';
 
+/**
+ * LocationMap Component
+ * 
+ * Displays a map with numbered circle markers for probable locations.
+ * Features:
+ * - Shows only numbered circles as markers (no pin icons)
+ * - Selected location has larger, highlighted circle with golden border
+ * - Auto-centers (fly-to) map when a location is selected
+ * - Handles location selection via click events
+ * - selectedLocation prop managed by parent component
+ */
+
 delete (L.Icon.Default.prototype as { _getIconUrl?: () => string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -28,23 +40,6 @@ interface LocationMapProps {
   };
   onLocationSelect?: (location: { name: string; lat: number; lng: number }) => void;
 }
-
-// Cerchio esatto (se serve)
-const createExactLocationIcon = () => {
-  return L.divIcon({
-    className: 'exact-location-marker',
-    html: `<div style="
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      background: #3b82f6;
-      border: 3px solid white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [25, 25],
-    iconAnchor: [12, 12],
-  });
-};
 
 // Cerchio numerato per location NON selezionata
 const createProbableLocationIcon = (index: number) => {
@@ -146,22 +141,7 @@ const LocationMap: React.FC<LocationMapProps> = ({
 
           <FlyToSelectedLocation selectedLocation={selectedLocation} />
 
-          {/* Marker per la posizione esatta (se serve) */}
-          {latitude && longitude && (
-            <Marker
-              position={[latitude, longitude]}
-              icon={createExactLocationIcon()}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <strong>Posizione esatta</strong><br />
-                  {latitude.toFixed(6)}, {longitude.toFixed(6)}
-                </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Marker per posizioni probabili */}
+          {/* Marker per posizioni probabili - solo cerchi numerati */}
           {locations.map((location, index) => {
             const isSelected = selectedLocation?.name === location.name;
             return (

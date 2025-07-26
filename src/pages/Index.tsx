@@ -226,6 +226,7 @@ const Index = () => {
                     result.exifData?.coordinates?.longitude || selectedLocation?.lng
                   }
                   locations={result.probableLocations || []}
+                  selectedLocation={selectedLocation}
                   onLocationSelect={handleLocationSelect}
                 />
               </div>
