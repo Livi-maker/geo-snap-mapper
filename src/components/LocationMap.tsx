@@ -13,39 +13,23 @@ L.Icon.Default.mergeOptions({
 });
 
 const createNumberedIcon = (number: number, isSelected: boolean = false) => {
-  const size = isSelected ? 42 : 30;
-  const backgroundColor = isSelected ? 'hsl(217 91% 50%)' : 'hsl(217 91% 60%)';
+  const size = isSelected ? 48 : 30;
+  const backgroundColor = isSelected ? '#2563eb' : 'hsl(217 91% 60%)';
+  const borderColor = isSelected ? '#fbbf24' : 'white';
   const borderWidth = isSelected ? '4px' : '3px';
   const boxShadow = isSelected
-    ? '0 4px 16px rgba(0,0,0,0.4), 0 2px 8px rgba(59, 130, 246, 0.5)'
+    ? '0 0 14px 4px #fbbf24, 0 2px 8px rgba(0,0,0,0.3)'
     : '0 2px 8px rgba(0,0,0,0.3)';
-  const fontSize = isSelected ? '14px' : '12px';
+  const fontSize = isSelected ? '16px' : '12px';
 
   return L.divIcon({
-    className: 'exact-location-marker',
-    html: `<div style="
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      background: #3b82f6;
-      border: 3px solid white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [25, 25],
-    iconAnchor: [12, 12],
-  });
-};
-
-// Cerchio numerato per location NON selezionata
-const createProbableLocationIcon = (index: number) => {
-  return L.divIcon({
-    className: 'location-marker',
+    className: `numbered-marker ${isSelected ? 'selected' : ''}`,
     html: `<div style="
       width: ${size}px;
       height: ${size}px;
       border-radius: 50%;
       background: ${backgroundColor};
-      border: ${borderWidth} solid white;
+      border: ${borderWidth} solid ${borderColor};
       display: flex;
       align-items: center;
       justify-content: center;
@@ -55,38 +39,14 @@ const createProbableLocationIcon = (index: number) => {
       box-shadow: ${boxShadow};
       transition: all 0.3s ease;
       z-index: ${isSelected ? 1000 : 500};
+      cursor: pointer;
     ">${number}</div>`,
-    className: `numbered-marker ${isSelected ? 'selected' : ''}`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 };
 
-// Cerchio numerato per location SELEZIONATA (più grande, evidenziato)
-const createSelectedLocationIcon = (index: number) => {
-  return L.divIcon({
-    className: 'selected-location-marker',
-    html: `<div style="
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #2563eb;
-      border: 4px solid #fbbf24;
-      box-shadow: 0 0 14px 4px #fbbf24, 0 2px 8px rgba(0,0,0,0.3);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: bold;
-      font-size: 22px;
-      transition: all 0.3s;
-      z-index:1000;
-    ">${index + 1}</div>`,
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
-  });
-};
+
 
 // Seleziona e centra la mappa sul luogo
 const FlyToSelectedLocation: React.FC<{ selectedLocation?: any }> = ({ selectedLocation }) => {
@@ -171,19 +131,9 @@ const LocationMap: React.FC<LocationMapProps> = ({
                 position={[location.lat, location.lng]}
                 icon={createNumberedIcon(index + 1, isSelected)}
                 eventHandlers={{
-                  click: () => handleLocationClick(location),
+                  click: () => onLocationSelect && onLocationSelect(location),
                 }}
-              >
-                <Popup>
-                  <div className="text-sm p-2">
-                    <strong>{location.name}</strong><br />
-                    <span className="text-green-600">Confidenza: {location.confidence}%</span><br />
-                    <small className="text-gray-500">
-                      {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                    </small>
-                  </div>
-                </Popup>
-              </Marker>
+              />
             );
           })}
         </MapContainer>

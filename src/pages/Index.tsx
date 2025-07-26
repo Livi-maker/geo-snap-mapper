@@ -189,23 +189,14 @@ const Index = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column - Info */}
+              {/* Left Column - Image Info and Metadata */}
               <div className="space-y-6">
                 {/* EXIF Info */}
                 {result.exifData && (
                   <ExifInfo exifData={result.exifData} />
                 )}
 
-                {/* Location Options */}
-                {result.probableLocations && result.probableLocations.length > 0 && (
-                  <LocationOptions
-                    locations={result.probableLocations}
-                    onLocationSelect={handleLocationSelect}
-                    selectedLocation={selectedLocation}
-                  />
-                )}
-
-                {/* Image Processor */}
+                {/* Image Processor with Download */}
                 {selectedLocation && originalFile && (
                   <ImageProcessor
                     originalFile={originalFile}
@@ -216,19 +207,31 @@ const Index = () => {
                 )}
               </div>
 
-              {/* Right Column - Map */}
-              <div className="lg:sticky lg:top-8 lg:self-start">
-                <LocationMap
-                  latitude={
-                    result.exifData?.coordinates?.latitude || selectedLocation?.lat
-                  }
-                  longitude={
-                    result.exifData?.coordinates?.longitude || selectedLocation?.lng
-                  }
-                  locations={result.probableLocations || []}
-                  selectedLocation={selectedLocation}
-                  onLocationSelect={handleLocationSelect}
-                />
+              {/* Right Column - Location Options and Map */}
+              <div className="space-y-6">
+                {/* Location Options */}
+                {result.probableLocations && result.probableLocations.length > 0 && (
+                  <LocationOptions
+                    locations={result.probableLocations}
+                    onLocationSelect={handleLocationSelect}
+                    selectedLocation={selectedLocation}
+                  />
+                )}
+
+                {/* Map */}
+                <div className="lg:sticky lg:top-8">
+                  <LocationMap
+                    latitude={
+                      result.exifData?.coordinates?.latitude || selectedLocation?.lat
+                    }
+                    longitude={
+                      result.exifData?.coordinates?.longitude || selectedLocation?.lng
+                    }
+                    locations={result.probableLocations || []}
+                    selectedLocation={selectedLocation}
+                    onLocationSelect={handleLocationSelect}
+                  />
+                </div>
               </div>
             </div>
           </div>
