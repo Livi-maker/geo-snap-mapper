@@ -31,35 +31,39 @@ const ImageProcessor: React.FC<ImageProcessorProps> = ({
 
   const updateImageMetadata = async () => {
     try {
-      // Note: In un'implementazione reale, useresti una libreria come piexifjs
-      // Per ora simulo l'aggiornamento creando una copia del file originale
+      const formData = new FormData();
+      formData.append('image', originalFile);
+      formData.append('latitude', selectedLocation.lat.toString());
+      formData.append('longitude', selectedLocation.lng.toString());
+      formData.append('location_name', selectedLocation.name);
+
+      const response = await fetch('/api/add-location', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Get the updated image as a blob
+      const imageBlob = await response.blob();
       
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
-        
-        // Simula l'aggiornamento dei metadati EXIF
-        // In una implementazione reale, qui useresti piexifjs per aggiungere le coordinate GPS
-        const updatedBlob = new Blob([arrayBuffer], { type: originalFile.type });
-        
-        // Crea un nuovo file con nome modificato per indicare l'aggiornamento
-        const fileName = originalFile.name.replace(/\.(jpg|jpeg|png)$/i, '_geotagged.$1');
-        const updatedFile = new File([updatedBlob], fileName, { type: originalFile.type });
-        
-        // Crea URL per download
-        const url = URL.createObjectURL(updatedFile);
-        setDownloadUrl(url);
-        setHasUpdatedMetadata(true);
-        
-        onImageUpdated(updatedFile);
-        
-        toast({
-          title: "Metadati aggiornati",
-          description: `Coordinate GPS aggiunte: ${selectedLocation.name}`,
-        });
-      };
+      // Create a new file with the geotagged image
+      const fileName = originalFile.name.replace(/\.(jpg|jpeg|png)$/i, '_geotagged.$1');
+      const updatedFile = new File([imageBlob], fileName, { type: 'image/jpeg' });
       
-      reader.readAsArrayBuffer(originalFile);
+      // Create URL for download
+      const url = URL.createObjectURL(updatedFile);
+      setDownloadUrl(url);
+      setHasUpdatedMetadata(true);
+      
+      onImageUpdated(updatedFile);
+      
+      toast({
+        title: "Metadati aggiornati",
+        description: `Coordinate GPS aggiunte: ${selectedLocation.name}`,
+      });
       
     } catch (error) {
       console.error('Error updating metadata:', error);

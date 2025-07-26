@@ -69,7 +69,31 @@ def predict_locations(image_path: str) -> Optional[List[Dict]]:
             max_tokens=400,
         )
         content = response.choices[0].message.content
-        data = json.loads(content)
-        return data.get("candidates")
-    except (OpenAIError, json.JSONDecodeError, KeyError, IndexError):
+        print(f"OpenAI raw response: {content}")
+        
+        if not content:
+            print("No content in OpenAI response")
+            return None
+        
+        # Clean up the response - remove markdown code blocks if present
+        cleaned_content = content.strip()
+        if cleaned_content.startswith('```json'):
+            cleaned_content = cleaned_content[7:]  # Remove ```json
+        if cleaned_content.startswith('```'):
+            cleaned_content = cleaned_content[3:]   # Remove ```
+        if cleaned_content.endswith('```'):
+            cleaned_content = cleaned_content[:-3]  # Remove trailing ```
+        
+        cleaned_content = cleaned_content.strip()
+        print(f"Cleaned content: {cleaned_content}")
+            
+        data = json.loads(cleaned_content)
+        print(f"Parsed JSON data: {data}")
+        
+        candidates = data.get("candidates")
+        print(f"Extracted candidates: {candidates}")
+        
+        return candidates
+    except (OpenAIError, json.JSONDecodeError, KeyError, IndexError) as e:
+        print(f"Error in predict_locations: {type(e).__name__}: {e}")
         return None

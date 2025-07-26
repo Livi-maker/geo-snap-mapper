@@ -78,55 +78,14 @@ const Index = () => {
     } catch (error) {
       console.error('Upload error:', error);
 
-      // Mock data for demonstration
-      const mockData: ProcessingResult = {
-        exifData: {
-          dateTime: "2024-07-15 14:30:22",
-          camera: {
-            make: "Apple",
-            model: "iPhone 14 Pro"
-          },
-          technical: {
-            aperture: "f/1.78",
-            shutterSpeed: "1/120",
-            iso: "64",
-            focalLength: "6.9mm"
-          }
-        },
-        probableLocations: [
-          {
-            name: "Torre Eiffel, Parigi",
-            lat: 48.8584,
-            lng: 2.2945,
-            confidence: 92,
-            description: "Iconica torre di ferro a Parigi, Francia"
-          },
-          {
-            name: "Champ de Mars, Parigi",
-            lat: 48.8556,
-            lng: 2.2986,
-            confidence: 78,
-            description: "Parco pubblico vicino alla Torre Eiffel"
-          },
-          {
-            name: "Trocadéro, Parigi",
-            lat: 48.8619,
-            lng: 2.2889,
-            confidence: 65,
-            description: "Punto panoramico con vista sulla Torre Eiffel"
-          }
-        ],
-        message: "Analisi basata su riconoscimento AI - Demo con dati mock"
-      };
-
-      setResult(mockData);
-      setSelectedLocation(mockData.probableLocations![0]);
-
       toast({
-        title: "Modalità Demo",
-        description: "Utilizzo dati di esempio - il backend non è ancora configurato",
-        variant: "default",
+        title: "Errore di elaborazione",
+        description: "Impossibile elaborare l'immagine. Verificare che il backend sia in esecuzione.",
+        variant: "destructive",
       });
+
+      setResult(null);
+      setSelectedLocation(null);
     } finally {
       setIsLoading(false);
     }

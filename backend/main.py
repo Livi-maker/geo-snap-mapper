@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 
@@ -57,12 +57,20 @@ async def geotag(file: UploadFile = File(...)):
     return StreamingResponse(open(tmp_path, "rb"), media_type="image/jpeg", headers=headers)
 
 
-@app.post("/api/process-image")
-async def process_image(image: UploadFile = File(...)):
-    if image.content_type != "image/jpeg":
+@app.post("/api/add-location")
+async def add_location_to_image(
+    image: UploadFile = File(...),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    location_name: str = Form(...)
+):
+    """Add custom GPS coordinates to an image"""
+    # Accept multiple image formats
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if image.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JPEG images are supported",
+            detail=f"Unsupported file type: {image.content_type}. Supported types: {', '.join(allowed_types)}",
         )
 
     data = await image.read()
@@ -72,16 +80,61 @@ async def process_image(image: UploadFile = File(...)):
             detail="File too large (max 10MB)",
         )
 
+    print(f"Geotagging image with coordinates: {latitude}, {longitude} ({location_name})")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+        tmp.write(data)
+        tmp_path = tmp.name
+
+    # Write the custom GPS coordinates to the image
+    write_gps(tmp_path, latitude, longitude)
+
+    # Return the image with embedded GPS data
+    headers = {
+        "X-Location-Name": location_name,
+        "X-GPS-Latitude": str(latitude),
+        "X-GPS-Longitude": str(longitude)
+    }
+    return StreamingResponse(open(tmp_path, "rb"), media_type="image/jpeg", headers=headers)
+
+
+@app.post("/api/process-image")
+async def process_image(image: UploadFile = File(...)):
+    # Accept multiple image formats
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if image.content_type not in allowed_types:
+        print(f"Rejected file type: {image.content_type}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file type: {image.content_type}. Supported types: {', '.join(allowed_types)}",
+        )
+
+    data = await image.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large (max 10MB)",
+        )
+
+    print(f"Processing image: {image.filename}, type: {image.content_type}, size: {len(data)} bytes")
+
     # Estrai EXIF
     exifData = {}
     try:
         img = Image.open(io.BytesIO(data))
         exif_dict = piexif.load(img.info.get("exif", b""))
+        print(f"EXIF dictionary keys: {list(exif_dict.keys())}")
+        print(f"0th keys: {list(exif_dict.get('0th', {}).keys())}")
+        print(f"GPS keys: {list(exif_dict.get('GPS', {}).keys())}")
+        
         # Data e ora
         dateTime = exif_dict["0th"].get(piexif.ImageIFD.DateTime, b"").decode() if exif_dict["0th"].get(piexif.ImageIFD.DateTime) else None
         # Camera
         make = exif_dict["0th"].get(piexif.ImageIFD.Make, b"").decode() if exif_dict["0th"].get(piexif.ImageIFD.Make) else None
         model = exif_dict["0th"].get(piexif.ImageIFD.Model, b"").decode() if exif_dict["0th"].get(piexif.ImageIFD.Model) else None
+        
+        print(f"Extracted: dateTime={dateTime}, make={make}, model={model}")
+        
         # GPS
         gps = exif_dict.get("GPS", {})
         latitude = longitude = None
@@ -106,7 +159,7 @@ async def process_image(image: UploadFile = File(...)):
         exifData = {
             "dateTime": dateTime,
             "camera": {"make": make, "model": model},
-            "coordinates": {"latitude": latitude, "longitude": longitude},
+            "coordinates": {"latitude": latitude, "longitude": longitude} if latitude and longitude else None,
             "technical": {
                 "aperture": f"f/{aperture[0]/aperture[1]:.2f}" if aperture else None,
                 "shutterSpeed": f"1/{int(1/shutterSpeed[0]*shutterSpeed[1])}" if shutterSpeed else None,
@@ -114,7 +167,9 @@ async def process_image(image: UploadFile = File(...)):
                 "focalLength": f"{focalLength[0]/focalLength[1]:.1f}mm" if focalLength else None,
             },
         }
-    except Exception:
+        print(f"Final exifData: {exifData}")
+    except Exception as e:
+        print(f"EXIF extraction error: {e}")
         exifData = None
 
     # Salva temporaneamente l'immagine
@@ -124,16 +179,22 @@ async def process_image(image: UploadFile = File(...)):
 
     # AI location analysis
     candidates = predict_locations(tmp_path)
+    print(f"Candidates from predict_locations: {candidates}")
+    
     probableLocations = []
     if candidates:
         for c in candidates:
-            probableLocations.append({
+            location = {
                 "name": c.get("place"),
                 "lat": c.get("latitude"),
                 "lng": c.get("longitude"),
                 "confidence": c.get("confidence_pct"),
                 "description": None
-            })
+            }
+            print(f"Processing candidate: {c} -> {location}")
+            probableLocations.append(location)
+    
+    print(f"Final probableLocations: {probableLocations}")
     message = "Analisi completata con successo" if candidates else "Analisi completata, nessuna località trovata"
 
     return JSONResponse({
