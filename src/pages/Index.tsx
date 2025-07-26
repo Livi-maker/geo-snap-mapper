@@ -188,48 +188,43 @@ const Index = () => {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column - Info */}
-              <div className="space-y-6">
-                {/* EXIF Info */}
-                {result.exifData && (
-                  <ExifInfo exifData={result.exifData} />
-                )}
+            <div className="space-y-6">
+              {/* EXIF Info */}
+              {result.exifData && (
+                <ExifInfo exifData={result.exifData} />
+              )}
 
-                {/* Location Options */}
-                {result.probableLocations && result.probableLocations.length > 0 && (
-                  <LocationOptions
-                    locations={result.probableLocations}
-                    onLocationSelect={handleLocationSelect}
-                    selectedLocation={selectedLocation}
-                  />
-                )}
-
-                {/* Image Processor */}
-                {selectedLocation && originalFile && (
-                  <ImageProcessor
-                    originalFile={originalFile}
-                    selectedLocation={selectedLocation}
-                    onImageUpdated={handleImageUpdated}
-                    isProcessing={isProcessingImage}
-                  />
-                )}
-              </div>
-
-              {/* Right Column - Map */}
-              <div className="lg:sticky lg:top-8 lg:self-start">
-                <LocationMap
-                  latitude={
-                    result.exifData?.coordinates?.latitude || selectedLocation?.lat
-                  }
-                  longitude={
-                    result.exifData?.coordinates?.longitude || selectedLocation?.lng
-                  }
-                  locations={result.probableLocations || []}
+              {/* Image Processor - Above the map */}
+              {selectedLocation && originalFile && (
+                <ImageProcessor
+                  originalFile={originalFile}
                   selectedLocation={selectedLocation}
-                  onLocationSelect={handleLocationSelect}
+                  onImageUpdated={handleImageUpdated}
+                  isProcessing={isProcessingImage}
                 />
-              </div>
+              )}
+
+              {/* Map - In the middle */}
+              <LocationMap
+                latitude={
+                  result.exifData?.coordinates?.latitude || selectedLocation?.lat
+                }
+                longitude={
+                  result.exifData?.coordinates?.longitude || selectedLocation?.lng
+                }
+                locations={result.probableLocations || []}
+                selectedLocation={selectedLocation}
+                onLocationSelect={handleLocationSelect}
+              />
+
+              {/* Location Options - Below the map */}
+              {result.probableLocations && result.probableLocations.length > 0 && (
+                <LocationOptions
+                  locations={result.probableLocations}
+                  onLocationSelect={handleLocationSelect}
+                  selectedLocation={selectedLocation}
+                />
+              )}
             </div>
           </div>
         )}
