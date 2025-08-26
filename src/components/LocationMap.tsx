@@ -118,6 +118,9 @@ const LocationMap: React.FC<LocationMapProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
+          {/* Component to fly to selected location */}
+          <FlyToSelectedLocation selectedLocation={selectedLocation} />
+
           {/* Probable locations markers */}
           {locations.map((location, index) => {
             const isSelected = selectedLocation &&
